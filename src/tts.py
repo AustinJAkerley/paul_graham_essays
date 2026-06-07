@@ -116,6 +116,8 @@ class ElevenLabsBackend(TTSBackend):
         api_key: str | None = None,
         voice_id: str | None = None,
         model_id: str | None = None,
+        stability: float | None = None,
+        similarity_boost: float | None = None,
     ) -> None:
         self.api_key = api_key or os.environ.get("ELEVENLABS_API_KEY")
         self.voice_id = voice_id or os.environ.get("ELEVENLABS_VOICE_ID")
@@ -123,6 +125,17 @@ class ElevenLabsBackend(TTSBackend):
             model_id
             or os.environ.get("ELEVENLABS_MODEL_ID")
             or "eleven_multilingual_v2"
+        )
+        # Voice settings control expressiveness. Override via env if desired.
+        self.stability = (
+            stability
+            if stability is not None
+            else float(os.environ.get("ELEVENLABS_STABILITY", "0.5"))
+        )
+        self.similarity_boost = (
+            similarity_boost
+            if similarity_boost is not None
+            else float(os.environ.get("ELEVENLABS_SIMILARITY_BOOST", "0.75"))
         )
         if not self.api_key:
             raise ValueError("ELEVENLABS_API_KEY is not set.")
@@ -139,7 +152,10 @@ class ElevenLabsBackend(TTSBackend):
         payload = {
             "text": text,
             "model_id": self.model_id,
-            "voice_settings": {"stability": 0.5, "similarity_boost": 0.75},
+            "voice_settings": {
+                "stability": self.stability,
+                "similarity_boost": self.similarity_boost,
+            },
         }
         resp = requests.post(url, headers=headers, json=payload, timeout=120)
         resp.raise_for_status()

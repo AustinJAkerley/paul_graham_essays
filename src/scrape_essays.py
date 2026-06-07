@@ -36,6 +36,9 @@ USER_AGENT = (
     "Mozilla/5.0 (compatible; pg-essays-tts/1.0; personal archival use)"
 )
 
+# Minimum length (chars) of extracted text to treat a page as a real essay.
+MIN_ESSAY_LENGTH = 200
+
 
 @dataclass
 class Essay:
@@ -106,7 +109,7 @@ def extract_essay_text(html: str) -> str:
     # Pick the one with the most text; fall back to the whole document.
     candidates = soup.find_all("font")
     node = max(candidates, key=lambda t: len(t.get_text()), default=None)
-    if node is None or len(node.get_text(strip=True)) < 200:
+    if node is None or len(node.get_text(strip=True)) < MIN_ESSAY_LENGTH:
         node = soup.body or soup
 
     text = node.get_text("\n")
@@ -146,7 +149,7 @@ def download_essays(
             print(f"[{i}/{len(essays)}] ERROR {essay.slug}: {exc}")
             continue
 
-        if len(text) < 200:
+        if len(text) < MIN_ESSAY_LENGTH:
             print(f"[{i}/{len(essays)}] WARN short/empty, skipping: {essay.slug}")
             continue
 
